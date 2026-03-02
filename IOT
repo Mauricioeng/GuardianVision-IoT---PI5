@@ -1,0 +1,55 @@
+GUARDIAN VISION V5.4 - AVATAR VIVO & CLIMA GRATUITO (ODS 3) 
+
+Estrutura de Conectividade e APIs
+
+O código transforma o ESP32 em um cliente web capaz de "conversar" com dois serviços diferentes.
+
+Open-Meteo (Entrada de Dados): O ESP32 faz uma requisição HTTP para saber o clima da sua rua. É um serviço gratuito que não exige chave, facilitando o uso para o ODS 3 (Saúde e Bem-Estar).
+
+ThingSpeak (Saída de Dados): Os dados lidos no seu sensor físico são enviados para esta plataforma para criar gráficos históricos.
+
+Ponto importante: A função enviarThingSpeak() monta uma URL com os valores de temperatura, umidade e gas e faz um http.GET() para registrar no seu canal.
+
+**A "Inteligência" e o Avatar Vivo**
+
+O que torna este código especial não é apenas a leitura de dados, mas como ele reage a eles.
+
+O Filtro de Suavização (Gás)
+
+C++
+valorGasSuavizado = (FILTRO_ALFA * rawGas) + ((1.0 - FILTRO_ALFA) * valorGasSuavizado);
+Isso é uma Média Móvel Exponencial. Sensores de gás costumam variar muito ("ruído"). Esse cálculo garante que o valor suba ou desça suavemente, evitando alarmes falsos ou mudanças bruscas no rosto do avatar.
+
+A Lógica de Expressão (Humor)
+Dentro de drawScreenAvatar(), o código usa condicionais para mudar o desenho no OLED:
+
+Gás > 1200: O avatar desenha "X" nos olhos (sufocado/alerta).
+
+Indice de Calor >= 31°C: Ele desenha olhos "derretendo" ou semicerrados.
+
+Chuva: Ele muda o formato da boca e exibe alertas de Dengue.
+
+Gerenciamento de Tempo (Multitarefa "Falsa")
+O código não usa delay() no loop principal (exceto no setup). Isso é fundamental.
+C++
+if (millis() - t_envio >= INT_ENVIO) { ... }
+
+O uso do millis() permite que o ESP32 faça várias coisas "ao mesmo tempo":
+
+Pisca os olhos do avatar em milissegundos.
+
+Lê os sensores a cada 2 segundos.
+
+Envia dados para a nuvem a cada 20 segundos.
+
+Busca a previsão do tempo a cada 10 minutos.
+
+Se usasse delay(20000) para o ThingSpeak, o avatar ficaria "congelado" por 20 segundos sem piscar ou atualizar o display.
+
+Componente	Pino (GPIO)	Função
+DHT22	23	Mede temperatura e umidade interna.
+MQ (Gás)	32	Mede a qualidade do ar (analógico).
+OLED (I2C)	21 (SDA), 22 (SCL)	Exibe o avatar e os dados.
+WiFi.h	N/A	Conecta à internet para APIs.
+
+BMP280 NÃO ESTÁ FUNCIONANDO
