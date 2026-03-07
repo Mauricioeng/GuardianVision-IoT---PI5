@@ -1,6 +1,6 @@
 // =================================================================================
-// ===      GUARDIAN VISION V5.6 - AVATAR VIVO & CLIMA GRATUITO (ODS 3)          ===
-// ===      Corrigido: Sensor BME280 (Pressão) no I2C Secundário (25/26)         ===
+// ===      GUARDIAN VISION  - AVATAR VIVO & CLIMA GRATUITO (ODS 3)          ===
+// ===                                  ===
 // =================================================================================
 
 #include <WiFi.h>
@@ -9,20 +9,20 @@
 #include <Adafruit_SSD1306.h>
 #include "DHT.h"
 #include <Adafruit_Sensor.h>
-#include <Adafruit_BME280.h> // BIBLIOTECA DO BME280 ADICIONADA!
+#include <Adafruit_BME280.h> // módulo não esta funcionando
 #include <WebServer.h>
 #include <HTTPClient.h>
 #include <ArduinoJson.h> 
 #include "time.h"
 
 // --- Configurações de Wi-Fi e ThingSpeak ---
-const char* ssid = "Maurício 2.4";
-const char* password = "961960804m";
-String writeAPIKey = "SD344USBB2DEBWKV"; // SUA CHAVE DE ESCRITA
+const char* ssid = xxxxxxxxxxxxxxxxxx
+const char* password = xxxxxxxxxxxxxxxxxxxxxxxxx
+String writeAPIKey = xxxxxxxxxxxxxxxxxxxxx
 
 // --- Configuração de Localização (Para o Open-Meteo Gratuito) ---
-String latitude = "-23.3641700";  
-String longitude = "-46.7405600"; 
+String latitude = "-23.xxxxx";  
+String longitude = "-xx.xxx"; 
 
 // --- Configurações de Pinos e Display (I2C Primário) ---
 #define SCREEN_WIDTH 128
