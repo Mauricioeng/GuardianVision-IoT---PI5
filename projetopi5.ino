@@ -1,6 +1,6 @@
 // =================================================================================
-// ===      GUARDIAN VISION  - AVATAR VIVO & CLIMA GRATUITO (ODS 3)          ===
-// ===                                  ===
+// ===      GUARDIAN VISION V5.7 - AVATAR, CLIMA E BLUETOOTH (ODS 3)             ===
+// ===      Adicionado: Transmissão de dados via Bluetooth Serial Clássico       ===
 // =================================================================================
 
 #include <WiFi.h>
@@ -9,20 +9,27 @@
 #include <Adafruit_SSD1306.h>
 #include "DHT.h"
 #include <Adafruit_Sensor.h>
-#include <Adafruit_BME280.h> // módulo não esta funcionando
+#include <Adafruit_BME280.h>
 #include <WebServer.h>
 #include <HTTPClient.h>
 #include <ArduinoJson.h> 
 #include "time.h"
 
+// --- BIBLIOTECA E CONFIGURAÇÃO BLUETOOTH ---
+#include "BluetoothSerial.h"
+#if !defined(CONFIG_BT_ENABLED) || !defined(CONFIG_BLUEDROID_ENABLED)
+#error Bluetooth nao esta habilitado! Verifique a configuracao da placa na IDE.
+#endif
+BluetoothSerial SerialBT; // Cria o objeto Bluetooth
+
 // --- Configurações de Wi-Fi e ThingSpeak ---
-const char* ssid = xxxxxxxxxxxxxxxxxx
-const char* password = xxxxxxxxxxxxxxxxxxxxxxxxx
-String writeAPIKey = xxxxxxxxxxxxxxxxxxxxx
+const char* ssid = "X";
+const char* password = "X";
+String writeAPIKey = "X"; 
 
 // --- Configuração de Localização (Para o Open-Meteo Gratuito) ---
-String latitude = "-23.xxxxx";  
-String longitude = "-xx.xxx"; 
+String latitude = "X";  
+String longitude = "X"; 
 
 // --- Configurações de Pinos e Display (I2C Primário) ---
 #define SCREEN_WIDTH 128
@@ -47,19 +54,20 @@ WebServer server(80);
 
 // Criação do barramento I2C secundário e objeto BME280
 TwoWire I2CBME = TwoWire(1); 
-Adafruit_BME280 bme; // OBJETO BME280
+Adafruit_BME280 bme; 
 
 // --- Variáveis de Controle de Tempo ---
 unsigned long t_leitura = 0, t_envio = 0, t_clima = 0, t_troca_tela = 0;
-unsigned long t_piscar = 0, t_falar = 0;
+unsigned long t_piscar = 0, t_falar = 0, t_bluetooth = 0; // Adicionado tempo do BT
 const long INT_LEITURA = 2000;
-const long INT_ENVIO = 20000; // Envia pro ThingSpeak a cada 20 segundos
+const long INT_ENVIO = 20000; 
 const long INT_CLIMA = 600000; 
+const long INT_BLUETOOTH = 10000; // Atualiza via Bluetooth a cada 10 segundos
 
 // --- Variáveis de Leitura ---
 float temperatura = 0.0, umidade = 0.0, indiceCalor = 0.0;
 float valorGasSuavizado = 0.0;
-float pressao = 0.0; // VARIÁVEL DA PRESSÃO DO BME280
+float pressao = 0.0; 
 const float FILTRO_ALFA = 0.15; 
 
 String climaDescricao = "Buscando...";
@@ -75,6 +83,10 @@ String falaAtual = "Estou acordando...";
 void setup() {
   Serial.begin(115200);
   
+  // INICIALIZA O BLUETOOTH
+  SerialBT.begin("Guardian_Vision"); // Nome que vai aparecer no seu celular
+  Serial.println("Bluetooth Iniciado! Emparelhe com 'Guardian_Vision'.");
+
   // Inicializa I2C Primário (OLED)
   Wire.begin(I2C_SDA_PIN, I2C_SCL_PIN);
   dht.begin();
@@ -82,9 +94,8 @@ void setup() {
   // Inicializa I2C Secundário (BME280) e o sensor
   I2CBME.begin(BME_SDA_PIN, BME_SCL_PIN);
   
-  // O BME280 exige que passemos o endereço (geralmente 0x76) e o barramento I2C que criamos
   if (!bme.begin(0x76, &I2CBME) && !bme.begin(0x77, &I2CBME)) { 
-    Serial.println(F("Nao foi possivel encontrar um sensor BME280 valido, verifique a fiacao!"));
+    Serial.println(F("Nao foi possivel encontrar um sensor BME280 valido!"));
   } else {
     Serial.println(F("BME280 Encontrado com sucesso!"));
   }
@@ -167,6 +178,21 @@ void loop() {
     enviarThingSpeak();
     t_envio = millis();
   }
+
+  // === CONTROLE BLUETOOTH ===
+  // 1. Envia automaticamente a cada 10 segundos
+  if (millis() - t_bluetooth >= INT_BLUETOOTH) {
+    enviarDadosBluetooth();
+    t_bluetooth = millis();
+  }
+  
+  // 2. Se você digitar algo no Bluetooth (ex: letra 's'), ele envia na hora
+  if (SerialBT.available()) {
+    char c = SerialBT.read();
+    if (c == 's' || c == 'S') {
+      enviarDadosBluetooth();
+    }
+  }
   
   // Tempo de Telas
   unsigned long tempoDeExibicao = (telaAtual == 0) ? 15000 : 5000;
@@ -174,6 +200,27 @@ void loop() {
     telaAtual = (telaAtual + 1) % NUM_TELAS; 
     atualizarDisplay(); 
     t_troca_tela = millis(); 
+  }
+}
+
+// --- FUNÇÃO PARA ENVIAR DADOS VIA BLUETOOTH ---
+void enviarDadosBluetooth() {
+  if (SerialBT.hasClient()) { // Só transmite se houver alguém conectado
+    SerialBT.println("\n=== STATUS DO GUARDIAN VISION ===");
+    SerialBT.print("Temperatura Interna: "); SerialBT.print(temperatura, 1); SerialBT.println(" C");
+    SerialBT.print("Umidade Relativa:    "); SerialBT.print(umidade, 1); SerialBT.println(" %");
+    SerialBT.print("Sensacao Termica:    "); SerialBT.print(indiceCalor, 1); SerialBT.println(" C");
+    SerialBT.print("Pressao Atmosferica: "); SerialBT.print(pressao, 1); SerialBT.println(" hPa");
+    SerialBT.print("Qualidade do Ar:     "); SerialBT.println(valorGasSuavizado);
+    
+    SerialBT.println("--- PREVISAO EXTERNA ---");
+    SerialBT.print("Condicao:            "); SerialBT.println(climaDescricao);
+    SerialBT.print("Temp. Externa:       "); SerialBT.print(tempExterna, 1); SerialBT.println(" C");
+    
+    if (vaiChover) {
+      SerialBT.println(">> ALERTA: POSSIBILIDADE DE CHUVA! <<");
+    }
+    SerialBT.println("=================================");
   }
 }
 
@@ -228,7 +275,6 @@ void buscarPrevisaoTempoGratuita() {
 }
 
 void lerSensores() {
-  // Leitura DHT
   float temp_lida = dht.readTemperature();
   float umid_lida = dht.readHumidity();
 
@@ -240,12 +286,10 @@ void lerSensores() {
     indiceCalor = dht.computeHeatIndex(temperatura, umidade, false);
   }
   
-  // Leitura Gás
   int rawGas = analogRead(GAS_SENSOR_PIN);
   if (valorGasSuavizado == 0) valorGasSuavizado = rawGas; 
   else valorGasSuavizado = (FILTRO_ALFA * rawGas) + ((1.0 - FILTRO_ALFA) * valorGasSuavizado);
 
-  // Leitura BME280 (Pressão em hPa) - COMANDO ATUALIZADO
   float leituraPressao = bme.readPressure() / 100.0F; 
   if (!isnan(leituraPressao) && leituraPressao > 0) {
     pressao = leituraPressao;
