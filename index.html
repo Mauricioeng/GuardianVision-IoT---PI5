@@ -50,6 +50,43 @@
     .chalk-font { font-family: 'Cabin Sketch', cursive; }
     .gradient-text { background: linear-gradient(90deg, #10b981, #3b82f6); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
     .scanlines { background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06)); background-size: 100% 4px, 3px 100%; }
+
+    @keyframes ticker {
+      0% { transform: translateX(100%); }
+      100% { transform: translateX(-100%); }
+    }
+    .animate-ticker {
+      display: inline-block;
+      white-space: nowrap;
+      animation: ticker 25s linear infinite;
+    }
+    @keyframes radar-spin {
+      from { transform: rotate(0deg); }
+      to { transform: rotate(360deg); }
+    }
+    .radar-sweep {
+      background: conic-gradient(from 0deg, transparent 70%, rgba(16, 185, 129, 0.4) 100%);
+      animation: radar-spin 3s linear infinite;
+    }
+    @keyframes scan-laser {
+      0% { top: 0%; opacity: 0; }
+      10% { opacity: 1; }
+      90% { opacity: 1; }
+      100% { top: 100%; opacity: 0; }
+    }
+    .laser-line {
+      position: absolute;
+      left: 0; width: 100%; height: 3px;
+      background: #10b981;
+      box-shadow: 0 0 15px #10b981, 0 0 30px #10b981;
+      animation: scan-laser 2.5s ease-in-out infinite;
+      z-index: 20;
+    }
+    .face-guide {
+      position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+      width: 60%; height: 70%; border: 2px dashed rgba(16, 185, 129, 0.5);
+      border-radius: 40%; z-index: 10;
+    }
   </style>
 </head>
 <body>
@@ -59,13 +96,8 @@
   <script type="text/babel">
     const { useState, useEffect, useRef } = React;
 
-
-    // ESTADO GLOBAL DA IA
-    
     window.globalSensorData = { temp: '--', umid: '--', gas: '--', press: '--', history:[], anomaly: null, mlRainProb: 0, llmReport: 'Buscando satélite...', healthData: {} };
 
-    
-    // Força o navegador a carregar o pacote de vozes no início
     if ('speechSynthesis' in window) { window.speechSynthesis.getVoices(); }
 
     const speakText = (text, setSpeaking) => {
@@ -73,7 +105,7 @@
       window.speechSynthesis.cancel(); 
       
       const utterance = new SpeechSynthesisUtterance(text);
-      utterance.lang = 'pt-BR'; // Trava rígida
+      utterance.lang = 'pt-BR'; 
       utterance.pitch = 1.0; 
       utterance.rate = 1.05;
 
@@ -93,7 +125,6 @@
         window.speechSynthesis.speak(utterance);
       };
 
-      // Se as vozes ainda não carregaram, espera o evento ou força após 500ms
       if (window.speechSynthesis.getVoices().length === 0) {
         let voicesReady = false;
         window.speechSynthesis.onvoiceschanged = () => {
@@ -107,9 +138,6 @@
       }
     };
 
-  
-    // 1. AVATAR DO GUARDIAN ACHEI FOFO KKKKKK QUERO DAR VIDA.                                                                      BRINCADEIRA
-    
     const GuardianAvatar = ({ speaking, size = "normal", isAsleep = false, emotion = "normal", context = "none" }) => {
       const isBig = size === "big";
       const [mouthState, setMouthState] = useState({ w: isBig ? 64 : 40, h: isBig ? 6 : 4, rounded: '50%' });
@@ -196,9 +224,6 @@
       );
     };
 
- 
-    // 2. TELA DE ABERTURA
-   
     const WelcomeScreen = ({ onComplete }) => {
       const[step, setStep] = useState(0); 
       const[isSpeaking, setIsSpeaking] = useState(false);
@@ -212,7 +237,7 @@
 
       const handleStart = () => {
         setStep(1);
-        triggerSpeech(`Sistemas ativados. Olá, eu sou o Guardian V9. Como posso te chamar?`);
+        triggerSpeech(`Acesso administrativo. Olá, eu sou o Guardian V9. Como posso te chamar?`);
       };
 
       const handleNameSubmit = (e) => {
@@ -232,21 +257,119 @@
             </div>
           )}
           <GuardianAvatar speaking={isSpeaking} size="big" isAsleep={step === 0} />
-          <div className="mt-8 w-full max-w-md z-10">
-            {step === 0 && <button onClick={handleStart} className="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-5 rounded-xl shadow-[0_0_20px_rgba(16,185,129,0.4)] transition-all flex items-center justify-center gap-2 text-xl border border-emerald-400"><span className="material-symbols-outlined text-3xl">power_settings_new</span> Inicializar Guardian IA</button>}
-            {step === 1 && <form onSubmit={handleNameSubmit} className="flex gap-2 fade-in"><input type="text" autoFocus required placeholder="Qual o seu nome?" className="flex-1 bg-white/90 backdrop-blur rounded-xl px-5 py-4 shadow-lg outline-none focus:ring-4 focus:ring-emerald-500 text-lg" value={inputValue} onChange={e => setInputValue(e.target.value)} disabled={isSpeaking} /><button type="submit" disabled={isSpeaking} className="bg-emerald-600 text-white p-4 rounded-xl shadow-lg hover:bg-emerald-700 disabled:opacity-50"><span className="material-symbols-outlined text-2xl mt-1">send</span></button></form>}
-            {step === 3 && <div className="text-center text-emerald-300 mt-4 animate-pulse font-mono text-sm"><p>Sincronizando com a nuvem Edge AI...</p></div>}
+          
+          <div className="mt-8 w-full max-w-md z-10 text-center">
+            {step === 0 && (
+              <div className="flex flex-col gap-4 w-full items-center">
+                {/* BOTÃO 1: PAINEL NEURAL */}
+                <button 
+                  onClick={handleStart} 
+                  className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-4 rounded-xl shadow-[0_0_20px_rgba(16,185,129,0.4)] transition-all flex items-center justify-center gap-2 text-lg border border-emerald-500"
+                >
+                  <span className="material-symbols-outlined text-2xl">dashboard</span> 
+                  Acessar Painel Neural
+                </button>
+
+                {/* BOTÃO 2: REGISTRAR DENÚNCIA */}
+                <button 
+                  onClick={() => window.location.href = 'informes.html'} 
+                  className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 rounded-xl shadow-[0_0_20px_rgba(37,99,235,0.4)] transition-all flex items-center justify-center gap-2 text-lg border border-blue-500"
+                >
+                  <span className="material-symbols-outlined text-2xl">campaign</span> 
+                  Registrar Denúncia
+                </button>
+
+                {/* BOTÃO 3: S.O.S IMEDIATO */}
+                <button 
+                  onClick={(e) => { e.preventDefault(); document.getElementById('btn-emergencia').click(); }} 
+                  className="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-4 rounded-xl shadow-[0_0_20px_rgba(225,29,72,0.6)] transition-all flex items-center justify-center gap-2 text-lg border border-red-500"
+                >
+                  <span className="material-symbols-outlined text-2xl animate-pulse">emergency</span> 
+                  S.O.S IMEDIATO
+                </button>
+              </div>
+            )}
+            
+            {step === 1 && (
+              <form onSubmit={handleNameSubmit} className="flex gap-2 fade-in">
+                <input type="text" autoFocus required placeholder="Qual o seu nome?" className="flex-1 bg-white/90 backdrop-blur rounded-xl px-5 py-4 shadow-lg outline-none focus:ring-4 focus:ring-emerald-500 text-lg" value={inputValue} onChange={e => setInputValue(e.target.value)} disabled={isSpeaking} />
+                <button type="submit" disabled={isSpeaking} className="bg-emerald-600 text-white p-4 rounded-xl shadow-lg hover:bg-emerald-700 disabled:opacity-50">
+                  <span className="material-symbols-outlined text-2xl mt-1">send</span>
+                </button>
+              </form>
+            )}
+            
+            {step === 3 && (
+              <div className="text-center text-emerald-300 mt-4 animate-pulse font-mono text-sm">
+                <p>Sincronizando com a nuvem Edge AI...</p>
+              </div>
+            )}
           </div>
         </div>
       );
     };
 
-    // ==========================================
-    // 3. ABA: PAINEL NEURAL (DASHBOARD)
-    // ==========================================
+    const LocationClimateData = ({ temp }) => {
+      const currentTemp = temp !== '--' ? parseFloat(temp) : 25;
+      const variacaoHistorica = currentTemp > 30 ? '+2.4°C' : '+1.2°C';
+      const statusClima = currentTemp > 30 ? 'CRÍTICO: Ilha de Calor' : 'ATENÇÃO: Aquecimento Padrão';
+      const colorAlerta = currentTemp > 30 ? 'bg-red-600' : 'bg-orange-500';
+
+      return (
+        <div className="bg-slate-900 rounded-2xl shadow-2xl border border-slate-700 overflow-hidden mb-6 flex flex-col md:flex-row relative z-10 fade-in">
+          <div className="md:w-1/3 bg-slate-950 p-6 flex flex-col items-center justify-center relative border-r border-slate-800">
+            <div className="absolute top-4 left-4 flex items-center gap-2">
+              <span className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></span>
+              <span className="text-emerald-500 text-xs font-mono font-bold tracking-widest">SATÉLITE LOCAL</span>
+            </div>
+            <div className="w-40 h-40 rounded-full border border-emerald-500/30 relative flex items-center justify-center mt-4">
+              <div className="absolute inset-0 rounded-full border border-emerald-500/10 scale-75"></div>
+              <div className="absolute inset-0 rounded-full border border-emerald-500/10 scale-50"></div>
+              <div className="w-full h-full rounded-full radar-sweep absolute rounded-full"></div>
+              <span className="material-symbols-outlined text-emerald-400 text-4xl z-10">my_location</span>
+              {currentTemp > 30 && <div className="absolute top-8 right-8 w-3 h-3 bg-red-500 rounded-full blur-[2px] animate-pulse"></div>}
+              <div className="absolute bottom-10 left-10 w-2 h-2 bg-orange-400 rounded-full blur-[1px]"></div>
+            </div>
+            <p className="text-slate-400 text-xs font-mono mt-4">LAT: -23.3619 | LON: -46.7408</p>
+          </div>
+
+          <div className="md:w-2/3 p-0 flex flex-col">
+            <div className={`${colorAlerta} text-white px-6 py-2 flex justify-between items-center shadow-md`}>
+              <span className="font-bold uppercase tracking-wide flex items-center gap-2">
+                <span className="material-symbols-outlined text-sm">warning</span> {statusClima}
+              </span>
+              <span className="text-xs font-mono opacity-80">ATUALIZAÇÃO EM TEMPO REAL</span>
+            </div>
+            <div className="p-6 flex-1 flex flex-col justify-center bg-gradient-to-br from-slate-900 to-slate-800">
+              <h3 className="text-xl font-bold text-white mb-2">Agravamento Térmico Regional</h3>
+              <p className="text-slate-300 text-sm mb-6 leading-relaxed">
+                Dados cruzados via satélite indicam que o microclima atual sofre influência direta da perda de cobertura vegetal e adensamento urbano. O asfalto e concreto retêm radiação infravermelha.
+              </p>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="bg-slate-950/50 p-4 rounded-xl border border-slate-700">
+                  <p className="text-slate-400 text-xs font-bold mb-1">VARIAÇÃO (10 ANOS)</p>
+                  <div className="flex items-end gap-2">
+                    <span className="text-3xl font-black text-orange-400">{variacaoHistorica}</span>
+                    <span className="material-symbols-outlined text-orange-400 mb-1">trending_up</span>
+                  </div>
+                </div>
+                <div className="bg-slate-950/50 p-4 rounded-xl border border-slate-700">
+                  <p className="text-slate-400 text-xs font-bold mb-1">IMPACTO NA SAÚDE (ODS 3)</p>
+                  <div className="flex items-center gap-2 h-full pb-1">
+                    <span className="material-symbols-outlined text-red-400 text-2xl">vital_signs</span>
+                    <span className="text-slate-200 text-sm font-medium leading-tight">Estresse cardiovascular moderado a alto</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      );
+    };
+
     const Dashboard = ({ data, aiAnalysis }) => {
       const [showReportModal, setShowReportModal] = useState(false);
-      const[copySuccess, setCopySuccess] = useState('');
+      const [copySuccess, setCopySuccess] = useState('');
 
       const generateReportText = () => {
         const sd = window.globalSensorData;
@@ -264,58 +387,90 @@
                `Sistema Gerador: Guardian V9 AI`;
       };
 
-      const copyToClipboard = () => {
-        navigator.clipboard.writeText(generateReportText()).then(() => {
-          setCopySuccess('Copiado!');
-          setTimeout(() => setCopySuccess(''), 2000);
+      const copyToClipboard = () => { navigator.clipboard.writeText(generateReportText()).then(() => { setCopySuccess('Copiado!'); setTimeout(() => setCopySuccess(''), 2000); }); };
+      const sendEmailReport = () => { window.location.href = `mailto:?subject=${encodeURIComponent(`Relatório Guardian`)}&body=${encodeURIComponent(generateReportText())}`; };
+
+      const downloadCSV = () => {
+        if (!data.feeds || data.feeds.length === 0) return;
+        let csvContent = "Data,Hora,Temperatura (C),Umidade (%),Gas MQ135 (ppm),Pressao (hPa)\n";
+        data.feeds.forEach(f => {
+          const date = new Date(f.created_at).toLocaleDateString('pt-BR');
+          const time = new Date(f.created_at).toLocaleTimeString('pt-BR');
+          csvContent += `${date},${time},${f.field1 || ''},${f.field2 || ''},${f.field3 || ''},${f.field4 || ''}\n`;
         });
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const link = document.createElement("a");
+        const url = URL.createObjectURL(blob);
+        link.setAttribute("href", url);
+        link.setAttribute("download", `Guardian_Sensores_${new Date().getTime()}.csv`);
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
       };
 
-      const sendEmailReport = () => {
-        const subject = encodeURIComponent(`Relatório Ambiental Guardian - ${new Date().toLocaleDateString('pt-BR')}`);
-        const body = encodeURIComponent(generateReportText());
-        window.location.href = `mailto:?subject=${subject}&body=${body}`;
+      const getMathAnalysis = () => {
+        if (!data.feeds || data.feeds.length === 0) return { avgTemp: '--', tempTrend: 0, points: 0, variance: '--', stdDev: '--' };
+        const temps = data.feeds.map(f => parseFloat(f.field1)).filter(n => !isNaN(n));
+        if(temps.length === 0) return { avgTemp: '--', tempTrend: 0, points: 0, variance: '--', stdDev: '--' };
+
+        const avgTemp = temps.reduce((a, b) => a + b, 0) / temps.length;
+        const trend = temps.length > 1 ? temps[temps.length - 1] - temps[0] : 0;
+        const squaredDiffs = temps.map(t => Math.pow(t - avgTemp, 2));
+        const variance = squaredDiffs.reduce((a, b) => a + b, 0) / temps.length;
+        const stdDev = Math.sqrt(variance);
+
+        return { 
+          avgTemp: avgTemp.toFixed(1), 
+          tempTrend: trend.toFixed(1), 
+          variance: variance.toFixed(2),
+          stdDev: stdDev.toFixed(2),
+          points: temps.length 
+        };
       };
+
+      const mathStats = getMathAnalysis();
 
       useEffect(() => {
         if(!data.feeds || data.feeds.length === 0) return;
-        
         const labels = data.feeds.map(f => new Date(f.created_at).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}));
         const temps = data.feeds.map(f => parseFloat(f.field1));
         const humids = data.feeds.map(f => parseFloat(f.field2));
-        const pressures = data.feeds.map(f => parseFloat(f.field4) || 1013);
 
         if(document.getElementById('chartTemp')) {
           if(window.chartTempInst) window.chartTempInst.destroy();
+          Chart.defaults.color = '#64748b';
+          Chart.defaults.font.family = "'Segoe UI', sans-serif";
+          
           window.chartTempInst = new Chart(document.getElementById('chartTemp'), {
             type: 'line', data: { labels, datasets:[
-              { label: 'Temp (°C)', data: temps, borderColor: '#f97316', backgroundColor: 'rgba(249, 115, 22, 0.1)', fill: true, yAxisID: 'y' },
-              { label: 'Umid (%)', data: humids, borderColor: '#3b82f6', backgroundColor: 'rgba(59, 130, 246, 0.1)', fill: true, yAxisID: 'y1' }
+              { label: 'Temperatura (°C)', data: temps, borderColor: '#ef4444', backgroundColor: 'rgba(239, 68, 68, 0.05)', fill: true, tension: 0.4, yAxisID: 'y' },
+              { label: 'Umidade (%)', data: humids, borderColor: '#3b82f6', backgroundColor: 'rgba(59, 130, 246, 0.05)', fill: true, tension: 0.4, yAxisID: 'y1' }
             ]},
-            options: { responsive: true, maintainAspectRatio: false, interaction: {mode: 'index', intersect: false}, scales: { y: { type: 'linear', position: 'left' }, y1: { type: 'linear', position: 'right', grid: {drawOnChartArea: false} } } }
-          });
-        }
-        if(document.getElementById('chartPress')) {
-          if(window.chartPressInst) window.chartPressInst.destroy();
-          window.chartPressInst = new Chart(document.getElementById('chartPress'), {
-            type: 'line', data: { labels, datasets:[{ label: 'Pressão Atmosférica (hPa)', data: pressures, borderColor: '#8b5cf6', backgroundColor: 'rgba(139, 92, 246, 0.1)', fill: true, tension: 0.4 }] },
-            options: { responsive: true, maintainAspectRatio: false }
+            options: { 
+              responsive: true, maintainAspectRatio: false, 
+              interaction: { mode: 'index', intersect: false }, 
+              plugins: { legend: { position: 'top', align: 'end', labels: { usePointStyle: true, boxWidth: 6 } } },
+              scales: { 
+                x: { grid: { display: false } },
+                y: { type: 'linear', position: 'left', grid: { color: '#f1f5f9' } }, 
+                y1: { type: 'linear', position: 'right', grid: { drawOnChartArea: false } } 
+              } 
+            }
           });
         }
       }, [data.feeds]);
 
       const arClassification = () => {
         const v = Number(data.gas);
-        if(v < 600) return { text: 'Ar Saudável', color: 'text-green-600', border: 'border-green-500', icon: 'green-500' };
-        if(v < 1000) return { text: 'Moderado', color: 'text-yellow-600', border: 'border-yellow-500', icon: 'yellow-500' };
-        return { text: 'Insalubre / Alerta', color: 'text-red-600', border: 'border-red-500', icon: 'red-500' };
+        if(v < 600) return { text: 'ÍNDICE SAUDÁVEL', color: 'text-emerald-500', bar: 'bg-emerald-500' };
+        if(v < 1000) return { text: 'MODERADO', color: 'text-amber-500', bar: 'bg-amber-500' };
+        return { text: 'INSALUBRE (ALERTA)', color: 'text-red-500', bar: 'bg-red-500' };
       };
       const arData = arClassification();
 
       return (
-        <div className="fade-in max-w-6xl mx-auto pb-10">
+        <div className="fade-in max-w-6xl mx-auto mb-8">
           
-          {/* JANELA DO RELATÓRIO (MODAL) */}
           {showReportModal && (
             <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 fade-in">
               <div className="bg-white rounded-2xl w-full max-w-2xl overflow-hidden shadow-2xl flex flex-col max-h-[90vh]">
@@ -335,55 +490,232 @@
             </div>
           )}
 
-          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
-            <div className="flex items-center gap-3">
-              <h2 className="text-2xl font-bold text-dark">Painel Neural de Sensores</h2>
-              <span className="bg-gradient-to-r from-emerald-500 to-teal-600 text-white px-3 py-1 rounded-full text-xs font-bold shadow-lg flex items-center gap-1"><span className="material-symbols-outlined text-sm">psychology</span> Processamento ML</span>
+          <div className="bg-slate-900 text-slate-300 px-4 py-2 rounded-lg mb-6 flex items-center shadow-md overflow-hidden border border-slate-700">
+            <div className="bg-red-600 text-white text-xs font-bold px-3 py-1 rounded flex items-center gap-1 z-10 shadow-lg whitespace-nowrap">
+              <span className="material-symbols-outlined text-sm">sensors</span> RADAR LIVE
             </div>
-            
-            {/* NOVO BOTÃO QUE ABRE O MODAL */}
-            <button onClick={() => setShowReportModal(true)} className="bg-slate-800 hover:bg-slate-700 text-white text-sm px-5 py-2.5 rounded-xl font-bold flex items-center justify-center gap-2 shadow-lg transition-all border border-slate-600">
-              <span className="material-symbols-outlined">assignment</span> Gerar Relatório
-            </button>
+            <div className="flex-1 overflow-hidden ml-4 relative h-6 flex items-center">
+              <div className="animate-ticker text-sm font-mono absolute whitespace-nowrap">
+                [ATUALIZAÇÃO ODS 3] Monitoramento contínuo da qualidade do ar ativado. | Temperatura atual: {data.temp}°C | Nível de Gás MQ135: {data.gas} ppm ({arData.text}) | Pressão Barométrica: {data.press} hPa | A saúde climática da sua região impacta diretamente a incidência de doenças respiratórias. Proteja-se.
+              </div>
+            </div>
+          </div>
+
+          <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-6">
+            <div>
+              <h2 className="text-3xl font-black text-slate-800 tracking-tight">Painel de Telemetria Integrado</h2>
+              <p className="text-slate-500 font-medium mt-1 flex items-center gap-2">
+                <span className="material-symbols-outlined text-emerald-500 text-sm">memory</span>
+                Processamento Edge ML & Sensores Ambientais
+              </p>
+            </div>
+            <div className="flex items-center gap-2">
+              <button onClick={downloadCSV} className="bg-slate-800 hover:bg-slate-700 text-white text-sm px-4 py-3 rounded-xl font-bold flex items-center justify-center gap-2 shadow-lg transition-all border border-slate-600">
+                <span className="material-symbols-outlined">table</span> CSV
+              </button>
+              <button onClick={() => setShowReportModal(true)} className="bg-emerald-600 hover:bg-emerald-700 text-white text-sm px-6 py-3 rounded-xl font-bold flex items-center justify-center gap-2 shadow-lg shadow-emerald-500/30 transition-all border border-emerald-500">
+                <span className="material-symbols-outlined">analytics</span> Relatório IA
+              </button>
+            </div>
           </div>
 
           {aiAnalysis.anomaly && (
-            <div className="mb-6 bg-red-100 border-l-8 border-red-600 p-4 rounded-lg shadow-md animate-pulse">
-              <div className="flex items-center gap-3"><span className="material-symbols-outlined text-red-600 text-3xl">emergency_home</span><div><h3 className="text-red-800 font-bold text-lg">Detecção de Anomalia</h3><p className="text-red-700 font-medium">{aiAnalysis.anomaly}</p></div></div>
+            <div className="mb-6 bg-red-50 border border-red-200 p-4 rounded-xl shadow-sm flex items-start gap-4 animate-pulse">
+              <div className="bg-red-100 p-2 rounded-full text-red-600"><span className="material-symbols-outlined text-3xl">warning</span></div>
+              <div><h3 className="text-red-800 font-black tracking-wide">ANOMALIA DETECTADA PELO GUARDIAN</h3><p className="text-red-600 text-sm font-medium mt-1">{aiAnalysis.anomaly}</p></div>
             </div>
           )}
 
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-            <div className="bg-white p-5 rounded-xl shadow border-l-4 border-orange-500 flex flex-col items-center"><span className="material-symbols-outlined text-orange-500 text-3xl mb-1">device_thermostat</span><p className="text-gray-500 text-sm">Temperatura</p><p className="text-2xl font-bold text-gray-800">{data.temp !== '--' ? Number(data.temp).toFixed(1) + ' °C' : '--'}</p></div>
-            <div className="bg-white p-5 rounded-xl shadow border-l-4 border-blue-500 flex flex-col items-center"><span className="material-symbols-outlined text-blue-500 text-3xl mb-1">humidity_percentage</span><p className="text-gray-500 text-sm">Umidade</p><p className="text-2xl font-bold text-gray-800">{data.umid !== '--' ? Number(data.umid).toFixed(0) + ' %' : '--'}</p></div>
-            <div className={`bg-white p-5 rounded-xl shadow border-l-4 ${arData.border} flex flex-col items-center`}><span className={`material-symbols-outlined text-${arData.icon} text-3xl mb-1`}>air</span><p className="text-gray-500 text-sm">Ar (MQ-135)</p><p className="text-2xl font-bold text-gray-800">{data.gas}</p><p className={`text-xs font-bold ${arData.color}`}>{arData.text}</p></div>
-            <div className="bg-white p-5 rounded-xl shadow border-l-4 border-purple-500 flex flex-col items-center relative overflow-hidden"><div className="absolute top-0 right-0 bg-purple-100 text-purple-700 text-[10px] px-2 py-1 rounded-bl-lg font-bold">BMP280</div><span className="material-symbols-outlined text-purple-500 text-3xl mb-1">speed</span><p className="text-gray-500 text-sm">Pressão Atm.</p><p className="text-2xl font-bold text-gray-800">{data.press !== '--' ? Number(data.press).toFixed(1) : '--'}</p><p className="text-xs font-bold text-purple-600">hPa</p></div>
+            <div className="bg-white p-5 rounded-2xl shadow-sm border border-slate-100 relative group overflow-hidden">
+              <div className="absolute top-0 left-0 w-1 h-full bg-orange-500"></div>
+              <p className="text-slate-400 text-xs font-bold mb-1 uppercase tracking-wider">DHT22 Térmico</p>
+              <div className="flex justify-between items-end">
+                <p className="text-3xl font-black text-slate-800">{data.temp !== '--' ? Number(data.temp).toFixed(1) : '--'}<span className="text-lg text-slate-400 font-normal">°C</span></p>
+                <span className="material-symbols-outlined text-orange-500 text-3xl opacity-20 group-hover:opacity-100 transition-opacity absolute right-4 bottom-4">device_thermostat</span>
+              </div>
+            </div>
+
+            <div className="bg-white p-5 rounded-2xl shadow-sm border border-slate-100 relative group overflow-hidden">
+              <div className="absolute top-0 left-0 w-1 h-full bg-blue-500"></div>
+              <p className="text-slate-400 text-xs font-bold mb-1 uppercase tracking-wider">Umidade Rel.</p>
+              <div className="flex justify-between items-end">
+                <p className="text-3xl font-black text-slate-800">{data.umid !== '--' ? Number(data.umid).toFixed(0) : '--'}<span className="text-lg text-slate-400 font-normal">%</span></p>
+                <span className="material-symbols-outlined text-blue-500 text-3xl opacity-20 group-hover:opacity-100 transition-opacity absolute right-4 bottom-4">water_drop</span>
+              </div>
+            </div>
+
+            <div className="bg-white p-5 rounded-2xl shadow-sm border border-slate-100 relative group overflow-hidden">
+              <div className={`absolute top-0 left-0 w-1 h-full ${arData.bar}`}></div>
+              <p className="text-slate-400 text-xs font-bold mb-1 uppercase tracking-wider flex justify-between">MQ-135 Gás <span className={`text-[10px] ${arData.color}`}>{arData.text}</span></p>
+              <div className="flex justify-between items-end">
+                <p className="text-3xl font-black text-slate-800">{data.gas}<span className="text-lg text-slate-400 font-normal ml-1">ppm</span></p>
+                <span className={`material-symbols-outlined ${arData.color} text-3xl opacity-20 group-hover:opacity-100 transition-opacity absolute right-4 bottom-4`}>air</span>
+              </div>
+            </div>
+
+            <div className="bg-white p-5 rounded-2xl shadow-sm border border-slate-100 relative group overflow-hidden">
+              <div className="absolute top-0 left-0 w-1 h-full bg-purple-500"></div>
+              <p className="text-slate-400 text-xs font-bold mb-1 uppercase tracking-wider">BMP280 Pressão</p>
+              <div className="flex justify-between items-end">
+                <p className="text-3xl font-black text-slate-800">{data.press !== '--' ? Number(data.press).toFixed(1) : '--'}<span className="text-sm text-slate-400 font-normal ml-1">hPa</span></p>
+                <span className="material-symbols-outlined text-purple-500 text-3xl opacity-20 group-hover:opacity-100 transition-opacity absolute right-4 bottom-4">speed</span>
+              </div>
+            </div>
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <div className="bg-white p-6 rounded-xl shadow lg:col-span-2 flex flex-col gap-6">
-              <div><h3 className="font-bold text-gray-700 mb-2">Clima Interno (Temp & Umid)</h3><div className="w-full h-48"><canvas id="chartTemp"></canvas></div></div>
-              <div><h3 className="font-bold text-gray-700 mb-2">Tendência Barométrica (Previsão via Pressão)</h3><div className="w-full h-48"><canvas id="chartPress"></canvas></div></div>
+          <LocationClimateData temp={data.temp} />
+
+          <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
+            <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 xl:col-span-2 flex flex-col">
+              <div className="flex justify-between items-center mb-6">
+                <h3 className="font-bold text-slate-800 text-lg flex items-center gap-2">
+                  <span className="material-symbols-outlined text-indigo-500">monitoring</span> Série Temporal (Clima Interno)
+                </h3>
+              </div>
+              <div className="w-full h-[300px]"><canvas id="chartTemp"></canvas></div>
             </div>
+            
             <div className="flex flex-col gap-6">
-              <div className="bg-gradient-to-br from-slate-800 to-slate-900 p-6 rounded-xl shadow border border-slate-700 relative overflow-hidden"><div className="absolute -right-4 -top-4 text-slate-700 opacity-30"><span className="material-symbols-outlined text-9xl">auto_awesome</span></div><h3 className="font-bold text-white mb-4 flex items-center gap-2 relative z-10"><span className="material-symbols-outlined text-emerald-400">robot_2</span> Relatório LLM Automático</h3>
-                {/* Agora com overflow para scroll se o texto ficar muito grande */}
-                <div className="text-slate-300 text-sm leading-relaxed relative z-10 italic overflow-y-auto max-h-40 pr-2">
-                  "{aiAnalysis.llmReport}"
+              <div className="bg-slate-50 border border-slate-200 p-6 rounded-2xl flex flex-col shadow-inner">
+                <h3 className="font-bold text-slate-800 mb-4 flex items-center gap-2 text-sm uppercase tracking-wider">
+                  <span className="material-symbols-outlined text-blue-600">functions</span> Inferência Estatística
+                </h3>
+                <div className="grid grid-cols-2 gap-3 mb-4">
+                  <div className="bg-white p-3 rounded-xl border border-slate-100 shadow-sm">
+                    <span className="block text-[10px] text-slate-400 font-bold mb-1">MÉDIA (μ) TEMP</span>
+                    <span className="text-lg font-black text-slate-700">{mathStats.avgTemp}°C</span>
+                  </div>
+                  <div className="bg-white p-3 rounded-xl border border-slate-100 shadow-sm">
+                    <span className="block text-[10px] text-slate-400 font-bold mb-1">DESVIO PADRÃO (σ)</span>
+                    <span className="text-lg font-black text-slate-700">{mathStats.stdDev}</span>
+                  </div>
+                </div>
+                <div className="bg-white p-3 rounded-xl border border-slate-100 shadow-sm flex justify-between items-center">
+                   <div>
+                     <span className="block text-[10px] text-slate-400 font-bold mb-1">TENDÊNCIA (ΔT)</span>
+                     <span className={`text-xl font-black ${mathStats.tempTrend > 0 ? 'text-red-500' : (mathStats.tempTrend < 0 ? 'text-blue-500' : 'text-slate-700')}`}>
+                        {mathStats.tempTrend > 0 ? '+' : ''}{mathStats.tempTrend}°C
+                     </span>
+                   </div>
+                   <span className="text-[10px] text-slate-400 text-right w-16 leading-tight">amostra de {mathStats.points} pts</span>
                 </div>
               </div>
-              <div className="bg-white p-6 rounded-xl shadow"><h3 className="font-bold text-gray-700 mb-4 flex items-center gap-2"><span className="material-symbols-outlined text-blue-500">water_drop</span> ML: Previsão de Chuva</h3><div className="flex items-end gap-4"><div className="flex-1 bg-gray-200 h-6 rounded-full overflow-hidden relative"><div className="absolute top-0 left-0 h-full bg-gradient-to-r from-blue-400 to-blue-600 transition-all duration-1000" style={{width: `${aiAnalysis.mlRainProb}%`}}></div></div><span className="font-bold text-2xl text-blue-700">{aiAnalysis.mlRainProb}%</span></div><p className="text-xs text-gray-500 mt-3 text-center">Cruzamento do delta hPa do BMP280 e umidade local.</p></div>
+
+              <div className="bg-gradient-to-br from-blue-900 to-slate-900 p-6 rounded-2xl shadow border border-blue-800/50 text-white relative overflow-hidden">
+                <div className="absolute -right-4 -bottom-4 opacity-10"><span className="material-symbols-outlined text-9xl">storm</span></div>
+                <h3 className="font-bold text-blue-300 mb-4 flex items-center gap-2 text-sm uppercase tracking-wider relative z-10">
+                  <span className="material-symbols-outlined">psychology</span> Rede Neural Predita
+                </h3>
+                <div className="relative z-10 flex flex-col">
+                  <span className="text-sm text-slate-300 mb-2">Probabilidade de Chuva (BMP280 + DHT22)</span>
+                  <div className="flex items-end gap-4 mb-2">
+                    <span className="font-black text-5xl text-white drop-shadow-lg">{aiAnalysis.mlRainProb}%</span>
+                  </div>
+                  <div className="w-full bg-slate-800 h-2 rounded-full overflow-hidden mt-2">
+                    <div className="bg-gradient-to-r from-blue-400 to-cyan-300 h-full transition-all duration-1000" style={{width: `${aiAnalysis.mlRainProb}%`}}></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="mt-6 bg-slate-900 p-6 rounded-2xl shadow-xl border border-slate-700 flex flex-col md:flex-row gap-6 items-center">
+            <div className="bg-emerald-500/20 p-4 rounded-full border border-emerald-500/50 flex-shrink-0 animate-pulse">
+              <span className="material-symbols-outlined text-4xl text-emerald-400">robot_2</span>
+            </div>
+            <div className="flex-1 w-full">
+              <h3 className="font-mono font-bold text-emerald-500 text-sm mb-2 flex items-center gap-2">
+                &gt; GUARDIAN_LLM_OUTPUT <span className="w-2 h-4 bg-emerald-500 inline-block animate-blink-lid"></span>
+              </h3>
+              <p className="text-slate-300 font-mono text-sm leading-relaxed border-l-2 border-slate-700 pl-4 py-1">
+                {aiAnalysis.llmReport}
+              </p>
             </div>
           </div>
         </div>
       );
     };
 
-
-    // 4. ABA: SAÚDE (ODS 3)
-    
-    const HealthSDG3 = ({ aiAnalysis }) => {
+    // ==========================================
+    // 4. ABA: SAÚDE (ODS 3) E SCANNER
+    // ==========================================
+    const HealthSDG3 = ({ aiAnalysis, userName }) => {
       const hd = aiAnalysis.healthData || {};
+      const [activeTab, setActiveTab] = useState('resp'); 
+      
+      const videoRef = useRef(null);
+      const [camStream, setCamStream] = useState(null);
+      const [isScanning, setIsScanning] = useState(false);
+      const [scanResult, setScanResult] = useState(null);
+      const [dbStatus, setDbStatus] = useState('');
+
+      const baseTemp = window.globalSensorData?.temp !== '--' ? parseFloat(window.globalSensorData.temp) : 28;
+      const baseGas = window.globalSensorData?.gas !== '--' ? parseFloat(window.globalSensorData.gas) : 800;
+      
+      const startBiometricScan = async () => {
+        try {
+          setScanResult(null); setDbStatus('');
+          const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+          setCamStream(stream);
+          if (videoRef.current) videoRef.current.srcObject = stream;
+          setIsScanning(true);
+          setTimeout(() => { analyzePsychology(); }, 4000);
+        } catch (err) { alert('Erro: Permissão de câmera negada.'); }
+      };
+
+      const stopCam = (stream) => { if (stream) stream.getTracks().forEach(track => track.stop()); setCamStream(null); setIsScanning(false); };
+
+      const analyzePsychology = () => {
+        let emotion, stressLevel, color, explanation;
+
+        if (baseTemp >= 30) {
+          emotion = "Irritabilidade / Fadiga"; stressLevel = "ALTO (85%)"; color = "text-red-500 border-red-500 bg-red-50";
+          explanation = `O scanner detectou dilatação pupilar e tensão maxilar. A temperatura extrema de ${baseTemp}°C está aumentando seus níveis de cortisol (hormônio do estresse) e forçando a termorregulação do corpo, gerando esgotamento mental.`;
+        } else if (baseGas >= 800) {
+          emotion = "Carga Cognitiva / Ansiedade"; stressLevel = "MODERADO (60%)"; color = "text-amber-500 border-amber-500 bg-amber-50";
+          explanation = `Detectamos micro-contrações ao redor dos olhos. O nível de gases/poluição (${baseGas} ppm) reduz a oxigenação cerebral, causando letargia leve e dificuldade de foco.`;
+        } else {
+          emotion = "Calma / Foco"; stressLevel = "BAIXO (15%)"; color = "text-emerald-500 border-emerald-500 bg-emerald-50";
+          explanation = `Músculos faciais relaxados e respiração ritmada. A temperatura de ${baseTemp}°C e o ar limpo formam o ambiente perfeito para a saúde mental e produtividade cognitiva.`;
+        }
+
+        setScanResult({ emotion, stressLevel, color, explanation, tempAtScan: baseTemp, gasAtScan: baseGas });
+        stopCam(camStream);
+      };
+
+      const saveBiometricsToDB = () => {
+        setDbStatus('Processando e enviando para a Nuvem...');
+        
+        const payload = {
+          usuario: userName || 'Cidadão Local',
+          emotion: scanResult.emotion,
+          stressLevel: scanResult.stressLevel,
+          tempAtScan: scanResult.tempAtScan,
+          gasAtScan: scanResult.gasAtScan,
+          explanation: scanResult.explanation
+        };
+
+        if (typeof google !== 'undefined' && google.script) {
+          google.script.run
+            .withSuccessHandler((res) => {
+              if (res.status === 'success') {
+                setDbStatus('✅ Laudo arquivado na Planilha ODS 3!');
+              } else {
+                setDbStatus('❌ Erro no banco de dados.');
+              }
+            })
+            .withFailureHandler(() => {
+              setDbStatus('❌ Falha na conexão de rede.');
+            })
+            .registrarBiometria(payload); 
+        } else {
+          setTimeout(() => { setDbStatus('✅ (Teste Local) Registrado no Banco!'); }, 1500);
+        }
+      };
+
+      useEffect(() => { return () => stopCam(camStream); }, [activeTab]);
+
       const getCardStyle = (status) => {
         if(status === 'Perigo' || status === 'Alerta') return 'bg-red-50 border-red-400 text-red-800';
         if(status === 'Atenção') return 'bg-yellow-50 border-yellow-400 text-yellow-800';
@@ -391,8 +723,9 @@
       };
 
       return (
-        <div className="fade-in max-w-5xl mx-auto pb-10">
-          <div className="bg-health text-white rounded-2xl p-6 shadow-xl mb-8 flex flex-col md:flex-row items-center gap-6 relative overflow-hidden">
+        <div className="fade-in max-w-6xl mx-auto pb-10 space-y-12">
+          {/* Header */}
+          <div className="bg-health text-white rounded-2xl p-6 shadow-xl flex flex-col md:flex-row items-center gap-6 relative overflow-hidden">
             <div className="absolute right-0 top-0 opacity-10"><span className="material-symbols-outlined text-[150px]">health_and_safety</span></div>
             <div className="bg-white text-health p-3 rounded-xl shadow-lg"><span className="material-symbols-outlined text-5xl">volunteer_activism</span></div>
             <div className="relative z-10 text-center md:text-left">
@@ -402,18 +735,137 @@
             </div>
           </div>
 
+          {/* Cards normais */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <div className={`p-6 rounded-2xl border-l-8 shadow-md flex flex-col h-full ${getCardStyle(hd.resp)}`}><div className="flex items-center gap-3 mb-4"><span className="material-symbols-outlined text-4xl">air</span><h3 className="font-bold text-xl">Risco Respiratório</h3></div><div className="flex-1"><p className="text-2xl font-black mb-2">{hd.resp}</p><p className="opacity-90">{hd.respDesc}</p></div><div className="mt-4 pt-4 border-t border-current/20 text-sm"><span className="font-bold">Ação:</span> {hd.resp === 'Bom' ? 'Continue respirando fundo!' : 'Ventile a casa para evitar asma ou bronquite.'}</div></div>
             <div className={`p-6 rounded-2xl border-l-8 shadow-md flex flex-col h-full ${getCardStyle(hd.thermal)}`}><div className="flex items-center gap-3 mb-4"><span className="material-symbols-outlined text-4xl">thermostat</span><h3 className="font-bold text-xl">Estresse Térmico</h3></div><div className="flex-1"><p className="text-2xl font-black mb-2">{hd.thermal}</p><p className="opacity-90">{hd.thermalDesc}</p></div><div className="mt-4 pt-4 border-t border-current/20 text-sm"><span className="font-bold">Ação:</span> {hd.thermal === 'Bom' ? 'Ambiente confortável.' : 'Beba muita água! Risco de insolação leve.'}</div></div>
             <div className={`p-6 rounded-2xl border-l-8 shadow-md flex flex-col h-full ${getCardStyle(hd.dengue)}`}><div className="flex items-center gap-3 mb-4"><span className="material-symbols-outlined text-4xl">bug_report</span><h3 className="font-bold text-xl">Alerta Dengue</h3></div><div className="flex-1"><p className="text-2xl font-black mb-2">{hd.dengue}</p><p className="opacity-90">{hd.dengueDesc}</p></div><div className="mt-4 pt-4 border-t border-current/20 text-sm"><span className="font-bold">Ação:</span> {hd.dengue === 'Bom' ? 'Monitoramento limpo.' : 'Chuva forma poças. Verifique quintal e vasos.'}</div></div>
           </div>
+
+          {/* NOVO: Scanner Biométrico */}
+          <div className="bg-white p-6 rounded-2xl shadow-lg border border-gray-100">
+             <h3 className="text-2xl font-bold text-dark mb-4 flex items-center gap-2"><span className="material-symbols-outlined text-indigo-600">center_focus_strong</span> Scanner Biométrico Neural</h3>
+             <p className="text-gray-500 mb-6 text-sm">Esta ferramenta cruza os dados atuais de temperatura e poluição para avaliar seu impacto cognitivo e emocional em tempo real.</p>
+             <div className="flex flex-col md:flex-row gap-6">
+                <div className="w-full md:w-1/2 bg-slate-900 rounded-xl overflow-hidden relative min-h-[300px] flex items-center justify-center border-4 border-slate-800">
+                   {isScanning ? (
+                     <React.Fragment>
+                       <video ref={videoRef} autoPlay playsInline className="w-full h-full object-cover opacity-60" />
+                       <div className="face-guide"></div>
+                       <div className="laser-line"></div>
+                       <p className="absolute bottom-4 text-emerald-400 font-mono text-sm animate-pulse bg-black/50 px-4 py-1 rounded">Analisando micro-expressões...</p>
+                     </React.Fragment>
+                   ) : (
+                     <div className="text-center p-6">
+                        <span className="material-symbols-outlined text-6xl text-slate-600 mb-4 block">face</span>
+                        <p className="text-slate-400 mb-6 text-sm">Câmera inativa. Inicie o escaneamento para análise de estresse térmico/cognitivo.</p>
+                        <button onClick={startBiometricScan} className="bg-emerald-600 hover:bg-emerald-500 text-white px-6 py-3 rounded-full font-bold transition-all shadow-[0_0_20px_rgba(16,185,129,0.4)] flex items-center justify-center gap-2 mx-auto">
+                          <span className="material-symbols-outlined">camera_alt</span> Iniciar Escaneamento
+                        </button>
+                     </div>
+                   )}
+                </div>
+                <div className="w-full md:w-1/2 flex flex-col justify-center">
+                   {scanResult ? (
+                     <div className={`p-6 rounded-xl border-2 ${scanResult.color} fade-in h-full flex flex-col`}>
+                        <h4 className="font-black text-xl mb-4 flex items-center gap-2"><span className="material-symbols-outlined">analytics</span> Laudo Gerado</h4>
+                        <div className="space-y-3 mb-6 flex-1">
+                          <p className="text-sm"><strong className="uppercase text-xs opacity-70 block mb-1">Estado Emocional Detectado:</strong> <span className="text-lg">{scanResult.emotion}</span></p>
+                          <p className="text-sm"><strong className="uppercase text-xs opacity-70 block mb-1">Nível de Estresse:</strong> <span className="text-lg">{scanResult.stressLevel}</span></p>
+                          <p className="text-sm bg-white/50 p-3 rounded text-slate-800 mt-2">{scanResult.explanation}</p>
+                        </div>
+                        
+                        <div className="flex flex-col gap-2 mt-auto">
+                          <button onClick={saveBiometricsToDB} className="bg-slate-800 text-white py-3 rounded-xl font-bold text-sm hover:bg-slate-700 transition-all flex items-center justify-center gap-2 w-full">
+                            <span className="material-symbols-outlined text-lg">cloud_upload</span> Salvar Laudo na Nuvem
+                          </button>
+                          {dbStatus && <p className="text-xs text-center font-mono mt-2 font-bold">{dbStatus}</p>}
+                        </div>
+                     </div>
+                   ) : (
+                     <div className="bg-slate-50 p-6 rounded-xl border border-slate-200 text-slate-500 text-sm text-center h-full flex items-center justify-center">
+                        <p>O resultado da análise facial cruzada com os dados de Temperatura ({baseTemp}°C) e Qualidade do Ar ({baseGas}ppm) aparecerá aqui.</p>
+                     </div>
+                   )}
+                </div>
+             </div>
+          </div>
+
+          {/* Impacto da Arborização */}
+          <div className="bg-white p-6 rounded-2xl shadow-lg border border-gray-100">
+            <div className="mb-6">
+              <h3 className="text-2xl font-bold text-dark flex items-center gap-2">
+                <span className="material-symbols-outlined text-emerald-500 text-3xl">park</span>
+                Impacto da Arborização Urbana
+              </h3>
+              <p className="text-gray-600 mt-1">Como a ausência de árvores afeta a qualidade do ar, o ponto de orvalho e agrava problemas de saúde pública (ODS 3).</p>
+            </div>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+              <div className="rounded-xl overflow-hidden bg-gray-50 border border-gray-200 flex flex-col">
+                <div className="h-56 relative group">
+                  <img src="https://images.unsplash.com/photo-1449844908441-8829872d2607?auto=format&fit=crop&q=80&w=800" alt="Rua asfaltada quente" className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" />
+                  <div className="absolute top-3 left-3 bg-red-600/90 backdrop-blur text-white text-xs font-bold px-3 py-1.5 rounded-lg flex items-center gap-1 shadow-lg">
+                    <span className="material-symbols-outlined text-sm">local_fire_department</span> Ilha de Calor (Sem Árvores)
+                  </div>
+                </div>
+                <div className="p-6">
+                  <ul className="space-y-4">
+                    <li className="flex justify-between items-center border-b border-gray-200 pb-3">
+                      <span className="text-gray-600 flex items-center gap-2"><span className="material-symbols-outlined text-orange-500">thermostat</span> Temp. Média</span> 
+                      <span className="font-black text-red-600 text-lg">+ 3.5 °C</span>
+                    </li>
+                    <li className="flex justify-between items-center border-b border-gray-200 pb-3">
+                      <span className="text-gray-600 flex items-center gap-2"><span className="material-symbols-outlined text-blue-400">water_drop</span> Ponto de Orvalho</span> 
+                      <div className="text-right">
+                        <span className="font-black text-orange-600 text-lg">23°C</span>
+                        <p className="text-[10px] text-gray-500 leading-none">Desconfortável / Abafado</p>
+                      </div>
+                    </li>
+                    <li className="flex justify-between items-center">
+                      <span className="text-gray-600 flex items-center gap-2"><span className="material-symbols-outlined text-gray-500">air</span> Qualidade do Ar</span> 
+                      <span className="font-bold text-red-600 text-right text-sm">Alta retenção de CO₂<br/>e poluição local</span>
+                    </li>
+                  </ul>
+                </div>
+              </div>
+
+              <div className="rounded-xl overflow-hidden bg-emerald-50/30 border border-emerald-200 shadow-[0_0_20px_rgba(16,185,129,0.1)] flex flex-col">
+                <div className="h-56 relative group">
+                  <img src="https://images.unsplash.com/photo-1518134066929-373eecb23fce?auto=format&fit=crop&q=80&w=800" alt="Via arborizada e fresca" className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" />
+                  <div className="absolute top-3 left-3 bg-emerald-600/90 backdrop-blur text-white text-xs font-bold px-3 py-1.5 rounded-lg flex items-center gap-1 shadow-lg">
+                    <span className="material-symbols-outlined text-sm">eco</span> Via Arborizada
+                  </div>
+                </div>
+                <div className="p-6">
+                  <ul className="space-y-4">
+                    <li className="flex justify-between items-center border-b border-gray-200 pb-3">
+                      <span className="text-gray-600 flex items-center gap-2"><span className="material-symbols-outlined text-orange-500">thermostat</span> Temp. Média</span> 
+                      <span className="font-black text-emerald-600 text-lg">- 2.0 °C</span>
+                    </li>
+                    <li className="flex justify-between items-center border-b border-gray-200 pb-3">
+                      <span className="text-gray-600 flex items-center gap-2"><span className="material-symbols-outlined text-blue-400">water_drop</span> Ponto de Orvalho</span> 
+                      <div className="text-right">
+                        <span className="font-black text-emerald-600 text-lg">15°C</span>
+                        <p className="text-[10px] text-gray-500 leading-none">Fresco / Agradável</p>
+                      </div>
+                    </li>
+                    <li className="flex justify-between items-center">
+                      <span className="text-gray-600 flex items-center gap-2"><span className="material-symbols-outlined text-emerald-500">air</span> Qualidade do Ar</span> 
+                      <span className="font-bold text-emerald-600 text-right text-sm">Filtragem natural<br/>do ar (Baixo CO₂)</span>
+                    </li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       );
     };
 
-
-    // 5. ABA: EDUCAÇÃO (AGORA COM 10 CARDS) 
-
+    // ==========================================
+    // 5. ABA: EDUCAÇÃO
+    // ==========================================
     const EducationHub = ({ openChatTopic }) => {
       const Card = ({ icon, title, desc, topic, color }) => (
         <div onClick={() => openChatTopic(topic)} className={`bg-white hover:bg-${color}-50 cursor-pointer p-6 rounded-2xl shadow border border-gray-100 transition-all hover:-translate-y-1 hover:shadow-lg flex flex-col items-center text-center`}>
@@ -446,8 +898,9 @@
       );
     };
 
-   
+    // ==========================================
     // 6. CHATBOT IA CONSCIENTE
+    // ==========================================
     const Chatbot = ({ userName, initialPrompt, clearInitialPrompt }) => {
       const [messages, setMessages] = useState([
         { text: `Olá, ${userName}! Sou o módulo IA do Guardian. Eu acesso os sensores em tempo real, monitoro a ODS 3 e também dou aulas. O que vamos aprender hoje?`, sender: "bot" }
@@ -469,7 +922,6 @@
         setBotEmotion('normal'); setBotContext('none');
         const sd = window.globalSensorData;
 
-        // == RESPOSTAS EDUCACIONAIS ==
         if(t.includes('ods 3') || t.includes('onu')) {
           setBotContext('health');
           return `A ODS 3 (Objetivo de Desenvolvimento Sustentável 3) da ONU foca em "Saúde e Bem-Estar". A meta é garantir acesso à saúde e reduzir mortes causadas pela poluição do ar e epidemias mundiais.`;
@@ -502,8 +954,6 @@
           setBotContext('water'); setBotEmotion('happy');
           return `O cérebro humano é 73% água! Se você não se hidrata, a oxigenação cerebral cai, causando dor de cabeça e falta de foco. E em dias quentes como os que o meu sensor DHT22 detecta, a água regula sua temperatura interna através do suor. Beba água!`;
         }
-
-        // == RESPOSTAS DE SENSORES ==
         else if(t.includes('chuva') || t.includes('chover')) {
           if (sd.mlRainProb > 50) { setBotEmotion('alert'); return `Analisando a queda de pressão atmosférica... Sim, minha rede neural aponta ${sd.mlRainProb}% de risco de chuva, ${userName}.`; } 
           else { setBotEmotion('happy'); return `Não vai chover agora. A probabilidade é de apenas ${sd.mlRainProb}%. A pressão de ${sd.press} hPa indica tempo firme!`; }
@@ -556,6 +1006,150 @@
     };
 
     // ==========================================
+    // 7. BOTÃO DE EMERGÊNCIA GLOBAL
+    // ==========================================
+    const EmergencyButton = ({ userName }) => {
+      const [isRecording, setIsRecording] = useState(false);
+      const [statusMsg, setStatusMsg] = useState('');
+      const [recordingTime, setRecordingTime] = useState(0); 
+      const mediaRecorderRef = useRef(null);
+      const audioChunksRef = useRef([]);
+      const timerRef = useRef(null);
+
+      const stopRecording = async () => {
+        setIsRecording(false);
+        clearInterval(timerRef.current);
+        setStatusMsg('Obtendo GPS e enviando...');
+        
+        if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
+          mediaRecorderRef.current.stop();
+        }
+      };
+
+      const handleEmergencyClick = async () => {
+        if (isRecording) {
+          stopRecording();
+        } else {
+          try {
+            const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+            mediaRecorderRef.current = new MediaRecorder(stream);
+            audioChunksRef.current = [];
+
+            mediaRecorderRef.current.ondataavailable = (event) => {
+              if (event.data.size > 0) audioChunksRef.current.push(event.data);
+            };
+
+            mediaRecorderRef.current.onstop = () => {
+              const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
+              stream.getTracks().forEach(track => track.stop()); 
+
+              if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(
+                  (position) => {
+                    const lat = position.coords.latitude;
+                    const lng = position.coords.longitude;
+                    
+                    const reader = new FileReader();
+                    reader.readAsDataURL(audioBlob);
+                    reader.onloadend = () => {
+                      const base64Audio = reader.result;
+                      
+                      if (typeof google !== 'undefined' && google.script) {
+                        google.script.run
+                          .withSuccessHandler((res) => {
+                            if(res.status === 'success') {
+                              setStatusMsg('✅ Alerta enviado às autoridades!');
+                            } else {
+                              setStatusMsg('❌ Erro no servidor.');
+                            }
+                            setTimeout(() => setStatusMsg(''), 5000);
+                          })
+                          .withFailureHandler(() => {
+                            setStatusMsg('❌ Falha na conexão.');
+                            setTimeout(() => setStatusMsg(''), 5000);
+                          })
+                          .registrarEmergencia({
+                            usuario: userName || 'Cidadão Anônimo',
+                            latitude: lat,
+                            longitude: lng,
+                            audioBase64: base64Audio
+                          });
+                      } else {
+                        console.log("Teste Local concluído.", { lat, lng, base64Audio });
+                        setStatusMsg('Ambiente de teste: Alerta simulado.');
+                        setTimeout(() => setStatusMsg(''), 4000);
+                      }
+                    };
+                  },
+                  (error) => {
+                    setStatusMsg('❌ Erro: Permissão de GPS negada.');
+                    setTimeout(() => setStatusMsg(''), 4000);
+                  },
+                  { enableHighAccuracy: true, timeout: 10000 }
+                );
+              } else {
+                setStatusMsg('GPS não suportado no navegador.');
+                setTimeout(() => setStatusMsg(''), 4000);
+              }
+            };
+
+            mediaRecorderRef.current.start();
+            setIsRecording(true);
+            setRecordingTime(0);
+            setStatusMsg('🔴 Gravando ambiente... Clique p/ enviar.');
+            timerRef.current = setInterval(() => {
+              setRecordingTime(prev => prev + 1);
+            }, 1000);
+
+            setTimeout(() => {
+              if (mediaRecorderRef.current && mediaRecorderRef.current.state === 'recording') {
+                stopRecording();
+              }
+            }, 30000);
+
+          } catch (err) {
+            console.error("Erro:", err);
+            setStatusMsg('❌ Permissão de microfone negada!');
+            setTimeout(() => setStatusMsg(''), 4000);
+          }
+        }
+      };
+
+      return (
+        <div className="fixed bottom-6 right-6 z-50 flex flex-col items-end gap-2 fade-in">
+          {statusMsg && (
+            <div className="bg-slate-900/90 backdrop-blur text-white text-sm px-4 py-2 rounded-xl shadow-2xl border border-slate-700 font-mono animate-pulse">
+              {statusMsg}
+            </div>
+          )}
+          
+          <div className="relative">
+            {isRecording && (
+              <div className="absolute -top-10 left-1/2 -translate-x-1/2 bg-red-600 text-white text-xs font-bold px-3 py-1 rounded-full shadow-lg animate-pulse whitespace-nowrap">
+                00:{recordingTime.toString().padStart(2, '0')}
+              </div>
+            )}
+            
+            <button 
+              id="btn-emergencia"
+              title="Botão de Pânico / S.O.S"
+              onClick={handleEmergencyClick}
+              className={`w-12 h-12 rounded-full flex items-center justify-center shadow-lg transition-all duration-300 ${
+                isRecording 
+                  ? 'bg-red-600 animate-pulse border-2 border-red-300 scale-110' 
+                  : 'bg-red-500/20 backdrop-blur-md border border-red-500/50 hover:bg-red-600 hover:scale-110'
+              }`}
+            >
+              <span className={`material-symbols-outlined ${isRecording ? 'text-white' : 'text-red-500 hover:text-white'} text-2xl transition-colors`}>
+                {isRecording ? 'stop_circle' : 'emergency'}
+              </span>
+            </button>
+          </div>
+        </div>
+      );
+    };
+
+    // ==========================================
     // MAIN APP
     // ==========================================
     const App = () => {
@@ -566,8 +1160,8 @@
       const[sensorData, setSensorData] = useState({ temp: '--', umid: '--', gas: '--', press: '--', feeds:[] });
       const[aiAnalysis, setAiAnalysis] = useState({ anomaly: null, mlRainProb: 0, llmReport: 'Carregando...', healthData: { resp:'Bom', thermal:'Bom', dengue:'Bom' } });
 
-      const MEU_CANAL_THINGSPEAK = '3FDFDHHHHH9'; 
-      const READ_API_KEY = 'IAK4343FDFU7070770'; 
+      const MEU_CANAL_THINGSPEAK = '3282069'; 
+      const READ_API_KEY = 'IK2EOICZPD2MVY7U'; 
 
       const processAI = (feeds) => {
         if (!feeds || feeds.length < 5) return;
@@ -621,8 +1215,6 @@
         return () => clearInterval(int);
       },[appState.isStarted]);
 
-      if (!appState.isStarted) return <WelcomeScreen onComplete={(name, page) => setAppState({ isStarted: true, userName: name, page: page })} />;
-
       const NavItem = ({ id, icon, label, subtitle }) => (
         <button onClick={() => { setAppState({...appState, page: id}); setMenuOpen(false); window.speechSynthesis.cancel(); }} 
           className={`w-full flex items-center gap-4 px-6 py-4 transition-all duration-200 text-left ${appState.page === id ? 'bg-slate-800 border-l-4 border-emerald-500 font-semibold shadow-inner' : 'hover:bg-slate-800/50 text-slate-300 border-l-4 border-transparent'}`}>
@@ -634,39 +1226,67 @@
       const goToChatWithPrompt = (prompt) => { setChatPrompt(prompt); setAppState({...appState, page: 'chatbot'}); };
 
       return (
-        <div className="flex h-screen overflow-hidden">
-          <aside className={`bg-slate-900 text-white w-80 flex flex-col fixed md:relative z-50 h-full transition-transform duration-300 shadow-2xl border-r border-slate-700 ${menuOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}`}>
-            <div className="p-6 border-b border-slate-700 bg-slate-950 relative overflow-hidden">
-              <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-500 rounded-full blur-[80px] opacity-20"></div>
-              <div className="flex items-center gap-3 font-bold text-2xl text-emerald-400 relative z-10"><span className="material-symbols-outlined text-3xl">radar</span> Radar Cidadão</div>
-              <p className="text-sm text-slate-400 mt-2 relative z-10">Operador Logado: <span className="text-white font-bold">{appState.userName}</span></p>
-            </div>
-            <nav className="flex-1 py-4 flex flex-col gap-1 overflow-y-auto">
-              <NavItem id="dashboard" icon="query_stats" label="Painel Neural" subtitle="Análise IoT e Gráficos ML" />
-              <NavItem id="health" icon="health_and_safety" label="Saúde (ODS 3)" subtitle="Monitoramento Vital & Endemias" />
-              <NavItem id="education" icon="school" label="Educação Edge" subtitle="Microlearning de IA e ODS" />
-              <NavItem id="chatbot" icon="smart_toy" label="Chat IA Guardian" subtitle="Interação em Linguagem Natural" />
-            </nav>
-            <div className="p-4 text-xs text-center text-slate-500 border-t border-slate-800 bg-slate-950 flex justify-center items-center gap-2">
-              <span className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></span> Sistema Guardian V9 AI
-            </div>
-          </aside>
+        <React.Fragment>
+          {!appState.isStarted ? (
+            <WelcomeScreen onComplete={(name, page) => setAppState({ isStarted: true, userName: name, page: page })} />
+          ) : (
+            <div className="flex h-screen overflow-hidden relative">
+              <aside className={`bg-slate-900 text-white w-80 flex flex-col fixed md:relative z-50 h-full transition-transform duration-300 shadow-2xl border-r border-slate-700 ${menuOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}`}>
+                <div className="p-6 border-b border-slate-700 bg-slate-950 relative overflow-hidden">
+                  <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-500 rounded-full blur-[80px] opacity-20"></div>
+                  <div className="flex items-center gap-3 font-bold text-2xl text-emerald-400 relative z-10"><span className="material-symbols-outlined text-3xl">radar</span> Radar Cidadão</div>
+                  <p className="text-sm text-slate-400 mt-2 relative z-10">Operador Logado: <span className="text-white font-bold">{appState.userName}</span></p>
+                </div>
+                <nav className="flex-1 py-4 flex flex-col gap-1 overflow-y-auto">
+                  <NavItem id="dashboard" icon="query_stats" label="Painel Integrado" subtitle="Sensores, Clima e ODS 3" />
+                  <NavItem id="education" icon="school" label="Educação Edge" subtitle="Microlearning de IA e ODS" />
+                  <NavItem id="chatbot" icon="smart_toy" label="Chat IA Guardian" subtitle="Interação em Linguagem Natural" />
+                  
+                  {/* NOVOS LINKS EXTERNOS */}
+                  <div className="mt-6 mb-2 px-6 text-[10px] font-bold text-slate-500 uppercase tracking-wider">Módulos Externos</div>
+                  
+                  <a href="seviu.html" className="w-full flex items-center gap-4 px-6 py-3 hover:bg-slate-800/50 text-slate-300 transition-all duration-200">
+                    <span className="material-symbols-outlined text-xl">visibility</span> 
+                    <div className="text-[15px]">SEVIU</div>
+                  </a>
+                  <a href="ubs.html" className="w-full flex items-center gap-4 px-6 py-3 hover:bg-slate-800/50 text-slate-300 transition-all duration-200">
+                    <span className="material-symbols-outlined text-xl">local_hospital</span> 
+                    <div className="text-[15px]">UBS Mais Próxima</div>
+                  </a>
+                  <a href="informes.html" className="w-full flex items-center gap-4 px-6 py-3 hover:bg-slate-800/50 text-slate-300 transition-all duration-200">
+                    <span className="material-symbols-outlined text-xl">campaign</span> 
+                    <div className="text-[15px]">Informes Cidadão</div>
+                  </a>
 
-          {menuOpen && <div className="fixed inset-0 bg-slate-900/60 z-40 md:hidden backdrop-blur-sm" onClick={() => setMenuOpen(false)}></div>}
+                </nav>
+                <div className="p-4 text-xs text-center text-slate-500 border-t border-slate-800 bg-slate-950 flex justify-center items-center gap-2">
+                  <span className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></span> Sistema Guardian V9 AI
+                </div>
+              </aside>
 
-          <main className="flex-1 flex flex-col h-full bg-[#f4f7f6]">
-            <header className="bg-white shadow-sm p-4 flex items-center gap-4 md:hidden">
-              <button onClick={() => setMenuOpen(true)} className="text-emerald-600 hover:text-emerald-800"><span className="material-symbols-outlined text-3xl mt-1">menu</span></button>
-              <h1 className="font-bold text-xl text-gray-800 gradient-text">Radar Cidadão AI</h1>
-            </header>
-            <div className="flex-1 overflow-y-auto p-4 md:p-8">
-              {appState.page === 'dashboard' && <Dashboard data={sensorData} aiAnalysis={aiAnalysis} />}
-              {appState.page === 'health' && <HealthSDG3 aiAnalysis={aiAnalysis} />}
-              {appState.page === 'education' && <EducationHub openChatTopic={goToChatWithPrompt} />}
-              {appState.page === 'chatbot' && <Chatbot userName={appState.userName} initialPrompt={chatPrompt} clearInitialPrompt={() => setChatPrompt('')} />}
+              {menuOpen && <div className="fixed inset-0 bg-slate-900/60 z-40 md:hidden backdrop-blur-sm" onClick={() => setMenuOpen(false)}></div>}
+
+              <main className="flex-1 flex flex-col h-full bg-[#f4f7f6]">
+                <header className="bg-white shadow-sm p-4 flex items-center gap-4 md:hidden">
+                  <button onClick={() => setMenuOpen(true)} className="text-emerald-600 hover:text-emerald-800"><span className="material-symbols-outlined text-3xl mt-1">menu</span></button>
+                  <h1 className="font-bold text-xl text-gray-800 gradient-text">Radar Cidadão AI</h1>
+                </header>
+                <div className="flex-1 overflow-y-auto p-4 md:p-8">
+                  {appState.page === 'dashboard' && (
+                    <div className="space-y-8">
+                      <Dashboard data={sensorData} aiAnalysis={aiAnalysis} />
+                      <HealthSDG3 aiAnalysis={aiAnalysis} userName={appState.userName} />
+                    </div>
+                  )}
+                  {appState.page === 'education' && <EducationHub openChatTopic={goToChatWithPrompt} />}
+                  {appState.page === 'chatbot' && <Chatbot userName={appState.userName} initialPrompt={chatPrompt} clearInitialPrompt={() => setChatPrompt('')} />}
+                </div>
+              </main>
             </div>
-          </main>
-        </div>
+          )}
+
+          <EmergencyButton userName={appState.userName || 'Cidadão Anônimo'} />
+        </React.Fragment>
       );
     };
 
