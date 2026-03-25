@@ -261,7 +261,6 @@
           <div className="mt-8 w-full max-w-md z-10 text-center">
             {step === 0 && (
               <div className="flex flex-col gap-4 w-full items-center">
-                {/* BOTÃO 1: PAINEL NEURAL */}
                 <button 
                   onClick={handleStart} 
                   className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-4 rounded-xl shadow-[0_0_20px_rgba(16,185,129,0.4)] transition-all flex items-center justify-center gap-2 text-lg border border-emerald-500"
@@ -269,8 +268,6 @@
                   <span className="material-symbols-outlined text-2xl">dashboard</span> 
                   Acessar Painel Neural
                 </button>
-
-                {/* BOTÃO 2: REGISTRAR DENÚNCIA */}
                 <button 
                   onClick={() => window.location.href = 'informes.html'} 
                   className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 rounded-xl shadow-[0_0_20px_rgba(37,99,235,0.4)] transition-all flex items-center justify-center gap-2 text-lg border border-blue-500"
@@ -278,8 +275,6 @@
                   <span className="material-symbols-outlined text-2xl">campaign</span> 
                   Registrar Denúncia
                 </button>
-
-                {/* BOTÃO 3: S.O.S IMEDIATO */}
                 <button 
                   onClick={(e) => { e.preventDefault(); document.getElementById('btn-emergencia').click(); }} 
                   className="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-4 rounded-xl shadow-[0_0_20px_rgba(225,29,72,0.6)] transition-all flex items-center justify-center gap-2 text-lg border border-red-500"
@@ -498,6 +493,19 @@
               <div className="animate-ticker text-sm font-mono absolute whitespace-nowrap">
                 [ATUALIZAÇÃO ODS 3] Monitoramento contínuo da qualidade do ar ativado. | Temperatura atual: {data.temp}°C | Nível de Gás MQ135: {data.gas} ppm ({arData.text}) | Pressão Barométrica: {data.press} hPa | A saúde climática da sua região impacta diretamente a incidência de doenças respiratórias. Proteja-se.
               </div>
+            </div>
+          </div>
+
+          {/* EXPLICATIVO DO DASHBOARD (Pedido pelo usuário) */}
+          <div className="bg-blue-50/80 p-5 rounded-2xl border border-blue-200 shadow-sm mb-6 flex flex-col md:flex-row items-start md:items-center gap-4">
+            <div className="bg-blue-600 text-white p-3 rounded-full flex-shrink-0 shadow-md">
+              <span className="material-symbols-outlined text-3xl">videocam</span>
+            </div>
+            <div>
+              <h3 className="font-black text-blue-900 text-lg">Aviso sobre o Monitoramento de Vídeo e Sensores</h3>
+              <p className="text-blue-800 text-sm mt-1 leading-relaxed">
+                Este dashboard e o sistema de vídeo/câmera integrado atuam de forma contínua para monitorar a <strong>qualidade do ar, a temperatura e a umidade</strong> do ambiente. O objetivo é cruzar esses dados biométricos e climáticos para prevenir riscos à saúde respiratória e estresse térmico, em alinhamento com a ODS 3 (Saúde e Bem-Estar).
+              </p>
             </div>
           </div>
 
@@ -803,10 +811,10 @@
             
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
               <div className="rounded-xl overflow-hidden bg-gray-50 border border-gray-200 flex flex-col">
-                <div className="h-56 relative group">
-                  <img src="https://i.imgur.com/XtsMtKj.jpeg" />
+                <div className="h-56 relative group overflow-hidden">
+                  <img src="https://i.imgur.com/XtsMtKj.jpeg" className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" alt="São Paulo - Ilha de Calor" />
                   <div className="absolute top-3 left-3 bg-red-600/90 backdrop-blur text-white text-xs font-bold px-3 py-1.5 rounded-lg flex items-center gap-1 shadow-lg">
-                    <span className="material-symbols-outlined text-sm">local_fire_department</span> Ilha de Calor (Sem Árvores)
+                    <span className="material-symbols-outlined text-sm">local_fire_department</span> Ilha de Calor (São Paulo)
                   </div>
                 </div>
                 <div className="p-6">
@@ -831,10 +839,10 @@
               </div>
 
               <div className="rounded-xl overflow-hidden bg-emerald-50/30 border border-emerald-200 shadow-[0_0_20px_rgba(16,185,129,0.1)] flex flex-col">
-                <div className="h-56 relative group">
-                  <img src="https://i.imgur.com/ZAnPMeh.jpeg" />
+                <div className="h-56 relative group overflow-hidden">
+                  <img src="https://i.imgur.com/ZAnPMeh.jpeg" className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" alt="Centro de Caieiras - Arborizada" />
                   <div className="absolute top-3 left-3 bg-emerald-600/90 backdrop-blur text-white text-xs font-bold px-3 py-1.5 rounded-lg flex items-center gap-1 shadow-lg">
-                    <span className="material-symbols-outlined text-sm">eco</span> Via Arborizada
+                    <span className="material-symbols-outlined text-sm">eco</span> Via Arborizada (Centro de Caieiras)
                   </div>
                 </div>
                 <div className="p-6">
