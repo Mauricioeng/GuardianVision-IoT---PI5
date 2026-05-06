@@ -1,7 +1,7 @@
-// =================================================================================
-// ===      GUARDIAN VISION V5.7 - AVATAR, CLIMA E BLUETOOTH (ODS 3)             ===
-// ===      Adicionado: Transmissão de dados via Bluetooth Serial Clássico       ===
-// =================================================================================
+// ==================================================================================================================================================================
+// ===       RECOMENDO PARA O ESTUDO DE TODOS  — GUARDIAN VISION V5.7 - AVATAR, CLIMA E BLUETOOTH (ODS 3)              ===                 =  = = = ======    ==== 
+// ===      Adicionado: Transmissão de dados via Bluetooth Serial Clássico       ===                           === ====           =====
+// ===================================================================================================================================================================
 
 #include <WiFi.h>
 #include <Wire.h>
@@ -84,7 +84,7 @@ void setup() {
   Serial.begin(115200);
   
   // INICIALIZA O BLUETOOTH
-  SerialBT.begin("Guardian_Vision"); // Nome que vai aparecer no seu celular
+  SerialBT.begin("Guardian_Vision"); 
   Serial.println("Bluetooth Iniciado! Emparelhe com 'Guardian_Vision'.");
 
   // Inicializa I2C Primário (OLED)
