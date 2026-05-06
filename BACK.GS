@@ -13,13 +13,13 @@ function registrarUsuario(dados) {
     const planilha = SpreadsheetApp.openById(SHEET_ID);
     let aba = planilha.getSheetByName('Usuarios');
     
-    // Se a aba "Usuarios" não existir na sua planilha, o robô cria uma automaticamente!
+    
     if (!aba) {
       aba = planilha.insertSheet('Usuarios');
       aba.appendRow(['Data do Cadastro', 'Nome', 'E-mail', 'Senha']); 
     }
     
-    // Salva a nova linha na planilha
+  
     aba.appendRow([new Date(), dados.nome, dados.email, dados.senha]);
     
     return { status: 'success', message: 'Cadastro realizado com sucesso!', user: dados };
